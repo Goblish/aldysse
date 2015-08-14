@@ -10,7 +10,7 @@
 #define RGB_MAP_TO_MIN 0.0
 #define RGB_MAP_TO_MAX 1.0
 
-#define WHITE_CHECK_MIN 100
+#define WHITE_CHECK_MIN 200
 
 SFE_ISL29125 RGB_sensor;
 
@@ -19,6 +19,20 @@ const double G_PERCENT_CORRECT = -13.00;
 const double B_PERCENT_CORRECT = 2.00;
 
 boolean incoming_read = false;
+
+void rectify(double RGB[3]) {
+  if (fabs(RGB[RED] - RGB[GREEN]) <= 0.1) {
+    RGB[GREEN] = RGB[RED];
+  }
+
+  if (fabs(RGB[RED] - RGB[BLUE]) <= 0.1) {
+    RGB[BLUE] = RGB[RED];
+  }
+
+  if (fabs(RGB[BLUE] - RGB[GREEN]) <= 0.1) {
+    RGB[GREEN] = RGB[BLUE];
+  }
+}
 
 void incoming_raw_value() {
   incoming_read = true;
@@ -35,10 +49,10 @@ void setup() {
 }
 
 void loop() {
+  static unsigned int is_white_count = 0;
+  static double RGB_adjust_factor[3] = { NULL, NULL, NULL };
   unsigned int RGB_raw[3];
   double RGB_map[3];
-  static unsigned int is_white_count = 0;
-  static double RGB_adjust_factor[3];
   double RGB[3];
   double M;
   double m;
@@ -52,6 +66,8 @@ void loop() {
     RGB_raw[GREEN] = RGB_sensor.readGreen();
     RGB_raw[BLUE] = RGB_sensor.readBlue();
 
+    //
+
     for (byte i = 0; i < 3; ++i) {
       RGB_map[i] = map_double(RGB_raw[i], RGB_MAP_FROM_MIN, RGB_MAP_FROM_MAX, RGB_MAP_TO_MIN, RGB_MAP_TO_MAX);
     }
@@ -63,15 +79,39 @@ void loop() {
     }
 
     if (is_white_count >= WHITE_CHECK_MIN) {
-      lcd_adjust_factor(RGB_map, RGB_adjust_factor);
-      //lcd_adjust_factor(RGB_raw, RGB_adjust_factor);
+      //lcd_adjust_factor(RGB_map, RGB_adjust_factor);
+      lcd_adjust_factor(RGB_raw, RGB_adjust_factor);
       is_white_count = 0;
-    } else {
+    } else if (RGB_adjust_factor[RED] != NULL && RGB_adjust_factor[GREEN] != NULL && RGB_adjust_factor[BLUE] != NULL) {
+      
+      double percent[3];
+      RGB_calc_percent_double(RGB_map, percent);
+      
       for (byte i = 0; i < 3; ++i) {
-        Serial.println(RGB_adjust_factor[i]);
-        RGB[i] = RGB_map[i] + (RGB_map[i] * (RGB_adjust_factor[i] / 100.00));
-        Serial.println(RGB[i]);
+        //Serial.println("Before");
+        //Serial.println(RGB_map[i]);
+        //Serial.println("----");
+        //RGB[i] = RGB_map[i] * (RGB_adjust_factor[i] / 100.00);
+        
+        RGB[i] = (percent[i] + RGB_adjust_factor[i]) * (RGB_map[RED] + RGB_map[GREEN] + RGB_map[BLUE]) / 100;
+        
+        if (RGB[i] > 1.00) {
+          RGB[i] = 1.00;
+        }
+        
+        if (RGB[i] < 0.00) {
+          RGB[i] = 0.00;
+        }
+        //Serial.println("After");
+        //Serial.println(RGB[i]);
+        //Serial.println("----");
       }
+      
+      rectify(RGB);
+      
+      Serial.println(RGB[RED]);
+      Serial.println(RGB[GREEN]);
+      Serial.println(RGB[BLUE]);
 
       H = 0;
       M = max_double(RGB[RED], RGB[GREEN], RGB[BLUE]);
@@ -91,7 +131,8 @@ void loop() {
       }
 
       //H = H * 60.00;
-      /*
+      H = fabs(H);
+      
       Serial.println(H);
 
       if (0.00 <= H && H < 1.00) {
@@ -111,9 +152,9 @@ void loop() {
       }
       if (5.00 <= H && H  < 6.00) {
         Serial.println("PURPLE");
-      }*/
+      }
 
-      delay(2000);
+      delay(3000);
     }
 
 /*

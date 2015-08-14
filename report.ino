@@ -97,7 +97,6 @@ void loop() {
   Serial.println(pBlue, DEC);
   Serial.println("");
 
-
   double R2 = (pRed + R_PERCENT_CORRECT) * total / 100;
   double G2 = (pGreen + G_PERCENT_CORRECT) * total / 100;
   double B2 = (pBlue + B_PERCENT_CORRECT) * total / 100;
