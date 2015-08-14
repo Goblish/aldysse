@@ -1,5 +1,5 @@
 
-double map_double(uint16_t val, float in_min, float in_max, float out_min, float out_max)
+double map_double(unsigned int val, float in_min, float in_max, float out_min, float out_max)
 {
   double x = (double)val;
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;

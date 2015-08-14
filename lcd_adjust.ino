@@ -1,20 +1,33 @@
 #define COLOR_BASE 0xFFFFFF
 
-void lcd_is_white(uint16_t *R, uint16_t *G, uint16_t *B) {
-
+boolean lcd_is_white(unsigned int RGB_raw[3]) {
+  double RGB_percent[3];
+  
+  RGB_calc_percent(RGB_raw, RGB_percent);
+  
+  if (RGB_percent[RED] <= 50.00 && 
+      RGB_percent[GREEN] <= 50.00 && 
+      RGB_percent[BLUE] <= 50.00) {
+    return true;
+  }
+  
+  return false;
 }
 
-void lcd_adjust(uint16_t *R, uint16_t *G, uint16_t *B) {
-  byte baseR = COLOR_BASE >> 16;
-  byte baseG = COLOR_BASE >> 8;
-  byte baseB = COLOR_BASE;
+void lcd_adjust_factor(double RGB[3], double RGB_adjust_factor[3]) {
+  unsigned int RGB_base[3];
+  double RGB_base_percent[3];
+  double RGB_percent[3];
 
-  Serial.println(baseR, DEC);
-  Serial.println(baseG, DEC);
-  Serial.println(baseB, DEC);
-}
+  for (byte i = 0; i < 3; ++i) {
+    RGB_base[i] = (unsigned int)byte(COLOR_BASE >> (16 - i * 8));
+  }
 
-void lcd_adjust_reset() {
+  RGB_calc_percent(RGB_base, RGB_base_percent);
+  RGB_calc_percent_double(RGB, RGB_percent);
 
+  for (byte i = 0; i < 3; ++i) {
+    RGB_adjust_factor[i] = RGB_base_percent[i] - RGB_percent[i];
+  }
 }
 
