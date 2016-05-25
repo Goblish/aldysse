@@ -1,5 +1,5 @@
 #include <Wire.h>
-#include <SFE_ISL29125.h>
+#include <SparkFunISL29125.h>
 
 #define RED 0
 #define GREEN 1
@@ -68,8 +68,10 @@ void loop() {
 
     //
 
+    // HERE MAPPER LES VALUES EN FONCTIONS DU pourcentage
     for (byte i = 0; i < 3; ++i) {
-      RGB_map[i] = map_double(RGB_raw[i], RGB_MAP_FROM_MIN, RGB_MAP_FROM_MAX, RGB_MAP_TO_MIN, RGB_MAP_TO_MAX);
+      //RGB_map[i] = map_double(RGB_raw[i], RGB_MAP_FROM_MIN, RGB_MAP_FROM_MAX, RGB_MAP_TO_MIN, RGB_MAP_TO_MAX);
+      RGB_map[i] = (double)RGB_raw[i] / ((double)RGB_raw[RED] + (double)RGB_raw[GREEN] + (double)RGB_raw[BLUE]);
     }
 
     if (RGB_is_same_that_last(RGB_map) && lcd_is_white(RGB_raw)) {
@@ -132,8 +134,6 @@ void loop() {
 
       //H = H * 60.00;
       H = fabs(H);
-      
-      Serial.println(H);
 
       if (0.00 <= H && H < 1.00) {
         Serial.println("RED ONE");
@@ -153,6 +153,8 @@ void loop() {
       if (5.00 <= H && H  < 6.00) {
         Serial.println("PURPLE");
       }
+      
+      Serial.println(H * 60);
 
       delay(3000);
     }
